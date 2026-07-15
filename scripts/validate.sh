@@ -8,17 +8,18 @@ for path in applications/root environments/dev services/service-a/overlays/dev; 
   kubectl kustomize "${path}" >/dev/null
 done
 
-if rg -n 'image:.*:latest|newTag: latest' . --glob '*.yaml'; then
+if grep -R -n -E 'image:.*:latest|newTag: latest' . --include='*.yaml'; then
   echo "FAIL: latest image tags are forbidden." >&2
   exit 1
 fi
 for label in name instance version managed-by part-of; do
-  if ! rg -U "app\.kubernetes\.io/${label}:" services/service-a --glob '*.yaml' >/dev/null; then
+  if ! grep -R -E "app\.kubernetes\.io/${label}:" services/service-a \
+    --include='*.yaml' >/dev/null; then
     echo "FAIL: required label app.kubernetes.io/${label} is missing." >&2
     exit 1
   fi
 done
-if ! rg -U 'requests:|limits:' services/service-a/base/deployment.yaml >/dev/null; then
+if ! grep -E 'requests:|limits:' services/service-a/base/deployment.yaml >/dev/null; then
   echo "FAIL: resource requests and limits are required." >&2
   exit 1
 fi
