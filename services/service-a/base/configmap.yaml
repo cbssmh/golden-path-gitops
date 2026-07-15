@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: service-a
+  labels:
+    app.kubernetes.io/name: service-a
+    app.kubernetes.io/instance: service-a-dev
+    app.kubernetes.io/version: 0.1.0
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: golden-path-platform
+data:
+  SERVICE_PORT: "8080"
