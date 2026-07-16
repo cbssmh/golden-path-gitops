@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: service-a
-          image: ghcr.io/cbssmh/golden-path-service-a:5be7f0d74a45ffb294e1979870d5a6667ecefce1
+          image: ghcr.io/cbssmh/golden-path-service-a@sha256:5972389a2b99f26c89544528e4785655aaa422b54e7f0602b4a7b77a5c640916
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

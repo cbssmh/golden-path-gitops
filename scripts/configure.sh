@@ -10,6 +10,7 @@ render_template() {
   local output="$2"
   sed \
     -e "s|__GITOPS_REPOSITORY_URL__|${GITOPS_REPOSITORY_URL}|g" \
+    -e "s|__GITOPS_TARGET_REVISION__|${GITOPS_TARGET_REVISION}|g" \
     -e "s|__SERVICE_A_IMAGE__|${SERVICE_A_IMAGE}|g" \
     "${template}" >"${output}"
 }

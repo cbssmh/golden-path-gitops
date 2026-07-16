@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     repoURL: __GITOPS_REPOSITORY_URL__
-    targetRevision: main
+    targetRevision: __GITOPS_TARGET_REVISION__
     path: services/service-a/overlays/dev
   destination:
     server: https://kubernetes.default.svc
