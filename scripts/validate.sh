@@ -6,9 +6,11 @@ cd "${ROOT_DIR}"
 # shellcheck source=/dev/null
 source "${ROOT_DIR}/config/values.env"
 
-for path in applications/root environments/dev services/service-a/overlays/dev; do
+for path in applications/root projects environments/dev services/service-a/overlays/dev; do
   kubectl kustomize "${path}" >/dev/null
 done
+
+ruby tests/trust-boundary/test_project_policy.rb
 
 if grep -R -n -E 'image:.*:latest|newTag: latest' . --include='*.yaml'; then
   echo "FAIL: latest image tags are forbidden." >&2

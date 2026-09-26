@@ -1,38 +1,55 @@
 # Golden Path GitOps
 
-This repository is the Kubernetes desired-state source of truth for the local
-v0.1.1 Golden Path release. It contains the Argo CD Service A Application, the
-`dev` namespace, and Service A Kustomize manifests. It does not build images or
-bootstrap clusters.
+This repository is the Kubernetes desired-state source for the local Golden
+Path platform. The historical v0.1.1 release is runtime-verified. The current
+GP-2A changes prepare a v0.2.0 release candidate with a workload AppProject,
+platform-owned `dev` namespace, Service A Application, and Service A Kustomize
+manifests. It does not build images or bootstrap clusters.
 
-## Immutable release inputs
+## Release inputs
 
-The official Platform v0.1.1 release workflow reads this repository at the
-annotated `v0.1.1` tag, not `main`. The Root Application and the generated
-`service-a` child Application both use `targetRevision: v0.1.1`.
+The verified Platform v0.1.1 workflow reads the annotated `v0.1.1` tag, not
+`main`. GP-2A prepares `targetRevision: v0.2.0`; that tag is not created until
+the repository-governance approval gate. An unprotected Git tag is not treated
+as immutable.
 
-[`config/values.env`](config/values.env) is the only GitOps value source. It
-defines the public repository URL, the `v0.1.1` release revision, and the
+[`config/values.env`](config/values.env) is the GitOps value source. It defines
+the public repository URL, the `v0.2.0` candidate revision, and the
 immutable Service A OCI image digest:
 
 ```text
 ghcr.io/cbssmh/golden-path-service-a@sha256:5972389a2b99f26c89544528e4785655aaa422b54e7f0602b4a7b77a5c640916
 ```
 
-`main` remains a development branch only; it is not the documented release
-source. Run `./scripts/configure.sh` after changing `config/values.env`. The
+`main` remains a development branch; it is not a release source. Run
+`./scripts/configure.sh` after changing `config/values.env`. The
 script renders tracked desired-state manifests from templates; do not edit the
 generated URL, revision, or image fields directly.
 
+## GP-2A trust boundary
+
+The root owns the `golden-path-service-a` AppProject, Namespace `dev`, and the
+Service A Application. The Service A overlay renders only Deployment, Service,
+and ConfigMap resources. Its AppProject permits only the exact GitOps
+repository, the in-cluster `dev` destination, those three namespaced kinds, and
+no cluster-scoped resources.
+
+This is SOURCE/TEST-CONFIRMED and not yet RUNTIME-VERIFIED. It is not a
+multi-tenant claim, and the Argo application-controller remains a cluster-wide,
+high-trust identity. CODEOWNERS documents path responsibility; with one
+maintainer it does not provide independent human review.
+
 ## Runtime verification
 
-The prior v0.1.0 GitOps path was runtime verified on local kind. The Platform
-v0.1.1 release workflow verifies this immutable GitOps tag and records the
-actual commands and runtime output in its separate v0.1.1 evidence directory.
+The prior v0.1.0 path and Platform v0.1.1 release were runtime verified on
+local kind. GP-2A runtime verification requires a separately approved clean
+v0.2.0 bootstrap.
 
 ## Validate
 
 Run `./scripts/configure.sh` after changing configuration, then
 `./scripts/validate.sh`. Validation renders all Kustomizations, rejects
 `latest`, requires the configured OCI digest and release revision, checks
-labels and resources, and uses kubeconform when installed.
+labels and resources, evaluates the real AppProject/Application contract and
+isolated denied fixtures, and uses kubeconform when installed. These policy
+results are TEST-VERIFIED / STATIC rather than runtime proof.
