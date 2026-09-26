@@ -1,0 +1,15 @@
+# Ownership documentation for the current single-maintainer repository.
+# AppProjects enforce runtime scope. Future GitHub rulesets enforce the PR/CI
+# workflow. CODEOWNERS does not provide independent review with one maintainer.
+* @cbssmh
+/projects/ @cbssmh
+/applications/root/ @cbssmh
+/templates/applications/root/ @cbssmh
+/environments/ @cbssmh
+/config/ @cbssmh
+/scripts/ @cbssmh
+/tests/trust-boundary/ @cbssmh
+/tests/fixtures/trust-boundary/ @cbssmh
+/.github/ @cbssmh
+/services/service-a/ @cbssmh
+/templates/services/service-a/ @cbssmh

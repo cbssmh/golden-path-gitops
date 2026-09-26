@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: denied-alternate-repository
+  namespace: argocd
+spec:
+  project: golden-path-service-a
+  source:
+    repoURL: https://example.invalid/alternate.git
+    targetRevision: main
+    path: service-a
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev

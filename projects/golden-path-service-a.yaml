@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: golden-path-service-a
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+  labels:
+    app.kubernetes.io/name: golden-path-service-a
+    app.kubernetes.io/part-of: golden-path-platform
+spec:
+  description: Service A workload deployment boundary.
+  sourceRepos:
+    - https://github.com/cbssmh/golden-path-gitops.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: dev
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - group: apps
+      kind: Deployment
+    - group: ""
+      kind: Service
+    - group: ""
+      kind: ConfigMap
