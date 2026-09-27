@@ -13,7 +13,7 @@ spec:
   project: golden-path-dev-admission
   source:
     repoURL: https://github.com/cbssmh/golden-path-gitops.git
-    targetRevision: v0.6.0
+    targetRevision: v0.6.1
     path: platform/admission/dev
   destination:
     server: https://kubernetes.default.svc

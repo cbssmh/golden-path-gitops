@@ -8,7 +8,16 @@ ROOT = File.expand_path("../..", __dir__)
 EXPECTED_REPOSITORY = "https://github.com/cbssmh/golden-path-gitops.git"
 EXPECTED_SERVER = "https://kubernetes.default.svc"
 EXPECTED_REVISION = "v0.4.0"
-EXPECTED_ADMISSION_REVISION = "v0.6.0"
+CONFIG_VALUES = File.readlines(File.join(ROOT, "config/values.env"), chomp: true).each_with_object({}) do |line, values|
+  next if line.empty? || line.start_with?("#")
+
+  key, value = line.split("=", 2)
+  raise "invalid config entry: #{line}" if value.nil?
+  raise "duplicate config key: #{key}" if values.key?(key)
+
+  values[key] = value
+end.freeze
+EXPECTED_ADMISSION_REVISION = CONFIG_VALUES.fetch("GITOPS_ADMISSION_TARGET_REVISION").freeze
 EXPECTED_NAMESPACE_KINDS = [
   ["", "ConfigMap"],
   ["", "Service"],
@@ -49,6 +58,8 @@ def group_kind(resource)
   group = api_version.include?("/") ? api_version.split("/", 2).first : ""
   [group, resource.fetch("kind")]
 end
+
+assert(EXPECTED_ADMISSION_REVISION.match?(/\Av\d+\.\d+\.\d+\z/), "configured admission revision must be an immutable semantic version tag")
 
 project = document("projects/golden-path-service-a.yaml")
 spec = project.fetch("spec")
