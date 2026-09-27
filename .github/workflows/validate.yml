@@ -7,13 +7,17 @@ on:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: azure/setup-kubectl@v4
-      - name: Install kubeconform
-        run: |
-          curl -sSL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz | tar xz
-          sudo mv kubeconform /usr/local/bin/kubeconform
+      # actions/checkout v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      # ruby/setup-ruby v1.327.0
+      - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8
+        with:
+          ruby-version: '3.3.10'
+      - name: Install checksum-verified CI tools
+        run: ./scripts/install-ci-tools.sh
+      - name: Verify Ruby version
+        run: test "$(ruby -e 'print RUBY_VERSION')" = "3.3.10"
       - name: Render and validate
         run: ./scripts/validate.sh

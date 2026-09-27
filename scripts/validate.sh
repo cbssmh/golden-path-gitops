@@ -5,6 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT_DIR}"
 # shellcheck source=/dev/null
 source "${ROOT_DIR}/config/values.env"
+# shellcheck source=/dev/null
+source "${ROOT_DIR}/ci/tool-versions.env"
 
 validate_rendering() {
   "${ROOT_DIR}/scripts/configure.sh" --check
@@ -24,6 +26,7 @@ validate_contracts() {
   ruby tests/trust-boundary/test_project_policy.rb
   ruby tests/workload-security/test_contract.rb
   ruby tests/resource-governance/test_contract.rb
+  ruby tests/supply-chain/test_pins.rb
 }
 
 validate_artifacts() {
@@ -54,12 +57,18 @@ validate_schemas() {
     echo "FAIL: kubeconform is required for schema validation." >&2
     exit 1
   fi
+  local schema_location
+  schema_location="https://raw.githubusercontent.com/yannh/kubernetes-json-schema/${KUBERNETES_SCHEMA_COMMIT}/v${KUBERNETES_SCHEMA_VERSION}-standalone-strict/{{.ResourceKind}}{{.KindSuffix}}.json"
   for path in \
     environments/dev \
     platform/resource-governance/dev \
     platform/service-accounts/service-a \
     services/service-a/overlays/dev; do
-    kubectl kustomize "${path}" | kubeconform -strict -summary
+    kubectl kustomize "${path}" | kubeconform \
+      -strict \
+      -summary \
+      -kubernetes-version "${KUBERNETES_SCHEMA_VERSION}" \
+      -schema-location "${schema_location}"
   done
   echo "PASS: kubeconform schema validation completed."
 }
@@ -71,7 +80,7 @@ validate_whitespace() {
 
 echo "== Render validation =="
 validate_rendering
-echo "== GP-2A, GP-3, and GP-4 semantic contracts =="
+echo "== GP-2A through GP-5 and SC-1 static contracts =="
 validate_contracts
 echo "== Artifact and image contract =="
 validate_artifacts
