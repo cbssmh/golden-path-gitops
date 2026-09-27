@@ -5,18 +5,20 @@ Path platform. GP-2A `v0.2.0` established and runtime-verified the Argo CD
 deployment boundary. GP-3 `v0.3.0` released and runtime-verified a hardened
 workload, Restricted Pod Security Admission, and a platform-owned
 ServiceAccount. GP-4 `v0.4.0` released and runtime-verified platform-owned
-namespace resource governance. GP-6 is implemented as a source- and
-test-verified admission candidate in Warn/Audit mode; it is not runtime
-verified or deny-enforced. This repository does not build images or bootstrap
-clusters.
+namespace resource governance. The corrected GP-6 policy is released as
+GitOps `v0.6.1`: CEL type checking is clean, Warn/Audit behavior is
+runtime-verified, and temporary Deny/Audit behavior was observed in a
+disposable cluster. The released binding remains Warn/Audit. This repository
+does not build images or bootstrap clusters.
 
 ## Release inputs
 
-Released workflows read annotated tags, not `main`. The current desired state
-targets the protected, annotated GitOps `v0.4.0` tag.
+Released workflows read annotated tags, not `main`. Workload, identity, and
+resource-governance Applications remain pinned to protected GitOps `v0.4.0`;
+the admission Application targets protected GitOps `v0.6.1`.
 
 [`config/values.env`](config/values.env) is the GitOps value source. It defines
-the public repository URL, the `v0.4.0` candidate revision, and the
+the public repository URL, both configured release revisions, and the
 immutable Service A OCI image digest:
 
 ```text
@@ -100,15 +102,19 @@ kind ownership; PSA retains standardized Pod security; ResourceQuota and
 LimitRange retain resource-budget enforcement.
 
 The GP-6 manifests and semantic fixtures are `SOURCE-CONFIRMED` and
-`TEST-VERIFIED / STATIC`. No Kubernetes admission behavior is claimed until a
-separately approved disposable runtime verification completes. See
+`TEST-VERIFIED / STATIC`. Kubernetes `v1.36.1` accepted the corrected policy
+without type-check warnings. Warn/Audit warnings were observed for all nine
+invalid fixtures while compliant Service A remained healthy. A temporary
+Deny/Audit switch rejected the same fixtures and was restored. That Deny
+result is a `TEMPORARY RUNTIME OBSERVATION`, not released enforcement. See
 [`docs/gp-6-validating-admission-policy.md`](docs/gp-6-validating-admission-policy.md).
 
 ## Runtime verification
 
 The v0.1.x path, GP-2A `v0.2.0` boundary, GP-3 `v0.3.0` workload security
-baseline, and GP-4 `v0.4.0` resource governance were runtime verified on local
-disposable kind clusters.
+baseline, GP-4 `v0.4.0` resource governance, and GP-6 Warn/Audit behavior were
+runtime verified on local disposable kind clusters. GP-6 Deny/Audit remains a
+temporary observation only.
 
 ## Validate
 
