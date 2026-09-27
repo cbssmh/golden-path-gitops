@@ -17,8 +17,17 @@ EXPECTED_EXPRESSIONS = [
   "c.securityContext.readOnlyRootFilesystem == true",
   "has(c.readinessProbe)",
   "has(c.livenessProbe)",
-  "'cpu' in c.resources.requests",
+  "'cpu' in dyn(c.resources).requests",
   "object.spec.replicas <= 4"
+].freeze
+RESOURCE_EXPRESSION_FRAGMENTS = [
+  "has(c.resources)",
+  "has(dyn(c.resources).requests)",
+  "has(dyn(c.resources).limits)",
+  "'cpu' in dyn(c.resources).requests",
+  "'memory' in dyn(c.resources).requests",
+  "'cpu' in dyn(c.resources).limits",
+  "'memory' in dyn(c.resources).limits"
 ].freeze
 
 def fail_test(message)
@@ -127,7 +136,15 @@ assert(validations.all? { |validation| !validation.fetch("message", "").empty? }
 EXPECTED_EXPRESSIONS.each do |fragment|
   assert(validations.any? { |validation| validation.fetch("expression", "").include?(fragment) }, "policy expression is missing #{fragment}")
 end
+resource_validation = validations.find do |validation|
+  validation.fetch("message", "").start_with?("Resource declaration contract failed:")
+end
+assert(resource_validation, "resource declaration validation is missing")
+RESOURCE_EXPRESSION_FRAGMENTS.each do |fragment|
+  assert(resource_validation.fetch("expression").include?(fragment), "resource validation is missing #{fragment}")
+end
 puts "PASS: VAP defines nine readable Deployment validations with failurePolicy Fail"
+puts "PASS: resource CEL requires CPU and memory requests and limits through type-check-safe map access"
 
 assert(binding.dig("metadata", "name") == "golden-path-deployment-contract-dev", "unexpected binding name")
 assert(binding.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "1", "binding must follow its policy")
@@ -145,6 +162,11 @@ deployment = workload.find { |resource| resource["kind"] == "Deployment" }
 assert(deployment, "rendered workload is missing its Deployment")
 assert(deployment_violations(deployment).empty?, "compliant Service A Deployment failed the GP-6 contract")
 puts "PASS: compliant Service A Deployment satisfies the GP-6 admission contract"
+
+missing_resources_fixture = YAML.load_file(File.join(ROOT, "tests/fixtures/admission-policy/forbidden/missing-resources.yaml"))
+missing_resources_candidate = apply_patch(deployment, missing_resources_fixture.fetch("patch"))
+assert(deployment_violations(missing_resources_candidate) == ["resources"], "missing resources must fail only the resource contract")
+puts "PASS: Deployment without resources fails the GP-6 resource contract"
 
 fixture_paths = Dir.glob(FIXTURES).sort
 assert(fixture_paths.length == 9, "expected exactly nine admission-policy negative fixtures")
