@@ -16,5 +16,6 @@ render_template() {
 }
 
 render_template "${ROOT_DIR}/templates/applications/root/service-a.yaml.tmpl" "${ROOT_DIR}/applications/root/service-a.yaml"
+render_template "${ROOT_DIR}/templates/applications/root/service-a-identity.yaml.tmpl" "${ROOT_DIR}/applications/root/service-a-identity.yaml"
 render_template "${ROOT_DIR}/templates/services/service-a/base/deployment.yaml.tmpl" "${ROOT_DIR}/services/service-a/base/deployment.yaml"
 echo "Rendered GitOps manifests from config/values.env."

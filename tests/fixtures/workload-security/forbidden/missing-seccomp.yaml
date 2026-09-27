@@ -1,0 +1,5 @@
+name: missing-seccomp
+expected: seccomp
+patch:
+  - op: remove
+    path: /spec/template/spec/securityContext/seccompProfile

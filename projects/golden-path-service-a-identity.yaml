@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: golden-path-service-a-identity
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+  labels:
+    app.kubernetes.io/name: golden-path-service-a-identity
+    app.kubernetes.io/part-of: golden-path-platform
+spec:
+  description: Platform-owned Service A identity boundary.
+  sourceRepos:
+    - https://github.com/cbssmh/golden-path-gitops.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: dev
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: ServiceAccount
