@@ -2,13 +2,15 @@
 
 ## Evidence state
 
-GP-6 is an admission-policy release candidate. Its manifests are
-`SOURCE-CONFIRMED`, and its semantic positive and negative contract tests are
-`TEST-VERIFIED / STATIC`. Kubernetes admission behavior is
-`NOT RUNTIME-VERIFIED`.
+The corrected GP-6 admission policy is released as GitOps `v0.6.1`. Its
+manifests are `SOURCE-CONFIRMED`, and its semantic positive and negative
+contract tests are `TEST-VERIFIED / STATIC`. Kubernetes `v1.36.1` type
+checking and Warn/Audit behavior are `RUNTIME-VERIFIED`.
 
-The initial binding uses `Warn` and `Audit`. GP-6 does not yet reject a
-Deployment, and this document makes no runtime-enforcement claim.
+The released binding uses `Warn` and `Audit`; it does not reject a Deployment.
+A temporary runtime-only switch to `Deny` and `Audit` rejected all nine invalid
+fixtures and was restored. That result is a `TEMPORARY RUNTIME OBSERVATION`,
+not the released enforcement state.
 
 ## Admission ownership
 
@@ -19,7 +21,7 @@ cluster-scoped kinds:
 - `admissionregistration.k8s.io/ValidatingAdmissionPolicyBinding`.
 
 It has no namespaced-resource permission. The `dev-admission` Application
-owns the admission path and targets the future GitOps `v0.6.0` release.
+owns the admission path and targets the protected GitOps `v0.6.1` release.
 
 The existing workload, identity, and resource-governance AppProjects remain
 unchanged. In particular, `golden-path-service-a` still permits only
@@ -66,20 +68,21 @@ GP-6 does not duplicate other Golden Path controls:
 GP-6 does not verify image signatures, provenance, SBOMs, vulnerabilities, or
 remote registry content.
 
-## Warn/Audit rollout
+## Runtime evidence and rollout state
 
-Before changing the binding to `Deny`, a separately approved disposable
-Kubernetes `v1.36.1` runtime must verify:
+The disposable Kubernetes `v1.36.1` exercise observed:
 
-1. the policy and binding are accepted without CEL type-check warnings;
-2. the released Service A Deployment produces no admission warning;
-3. every negative fixture produces the intended warning and audit evidence;
-4. Argo applications and Service A remain healthy;
-5. the same fixtures are rejected after an explicit, separately reviewed
-   transition to `Deny` and `Audit`.
+1. `observedGeneration == generation`, empty `status.typeChecking`, and no
+   `expressionWarnings` for the corrected policy;
+2. no warning for the compliant Service A Deployment;
+3. expected warnings for all nine invalid fixtures under Warn/Audit;
+4. healthy Argo Applications and Service A; and
+5. API rejection and object absence for all nine fixtures during a temporary
+   Deny/Audit switch.
 
-The Deny transition requires its own governed change. It must not add user,
-group, or controller bypass actors.
+The binding was restored to Warn/Audit before cleanup. A permanent Deny
+transition still requires its own governed source change and release. It must
+not add user, group, or controller bypass actors.
 
 ## Residual risks
 
