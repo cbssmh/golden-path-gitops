@@ -1,0 +1,5 @@
+name: missing-capabilities-drop
+expected: capabilities
+patch:
+  - op: remove
+    path: /spec/template/spec/containers/0/securityContext/capabilities/drop

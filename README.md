@@ -4,15 +4,14 @@ This repository is the Kubernetes desired-state source for the local Golden
 Path platform. GP-2A `v0.2.0` established and runtime-verified the Argo CD
 deployment boundary. GP-3 `v0.3.0` released and runtime-verified a hardened
 workload, Restricted Pod Security Admission, and a platform-owned
-ServiceAccount. The current GP-4 changes prepare a `v0.4.0` release candidate
-with platform-owned namespace resource governance. This repository does not
-build images or bootstrap clusters.
+ServiceAccount. GP-4 `v0.4.0` released and runtime-verified platform-owned
+namespace resource governance. This repository does not build images or
+bootstrap clusters.
 
 ## Release inputs
 
-Released workflows read annotated tags, not `main`. GP-4 prepares
-`targetRevision: v0.4.0`; that tag does not exist during the implementation
-review gate and must not be created before governance approval.
+Released workflows read annotated tags, not `main`. The current desired state
+targets the protected, annotated GitOps `v0.4.0` tag.
 
 [`config/values.env`](config/values.env) is the GitOps value source. It defines
 the public repository URL, the `v0.4.0` candidate revision, and the
@@ -52,7 +51,7 @@ The workload AppProject remains limited to Deployment, Service, and ConfigMap.
 A separate platform-owned identity Application uses a dedicated AppProject
 that permits only ServiceAccount in `dev`. No RBAC binding is created.
 
-The rendered positive contract and nine negative fixtures are
+The rendered positive contract and fifteen negative fixtures are
 TEST-VERIFIED / STATIC. The released GP-3 workload, effective identity, token
 absence, read-only root filesystem, and Restricted PSA enforcement were also
 RUNTIME-VERIFIED in a disposable cluster.
@@ -68,22 +67,36 @@ The positive contract verifies exact quota values, exact per-container maxima,
 and that Service A plus its rolling surge fit the budget. Eight isolated
 negative fixtures cover excessive replicas, CPU and memory requests and
 limits, missing resources, and missing governance objects. These results are
-TEST-VERIFIED / STATIC. Kubernetes quota and LimitRange admission remain NOT
-RUNTIME-VERIFIED until a separately approved disposable runtime phase.
+TEST-VERIFIED / STATIC. Kubernetes quota and LimitRange admission were also
+RUNTIME-VERIFIED in a disposable cluster.
+
+## GP-5 CI contract
+
+`scripts/validate.sh` is the fail-closed GitOps CI entrypoint. It keeps the
+GP-2A, GP-3, and GP-4 semantic contracts separate, verifies Kustomize renders,
+rejects template/render drift, checks the artifact identity, runs schema
+validation, and checks whitespace. The required GitHub check remains
+`validate`.
+
+These workflow and contract definitions are `SOURCE-CONFIRMED`. Their positive
+and negative executions are `TEST-VERIFIED`; they do not prove Kubernetes or
+Argo runtime behavior. Existing GP-2A, GP-3, and GP-4 runtime evidence remains
+separate and `RUNTIME-VERIFIED`.
 
 ## Runtime verification
 
-The v0.1.x path, GP-2A `v0.2.0` boundary, and GP-3 `v0.3.0` workload security
-baseline were runtime verified on local disposable kind clusters. GP-4 has not
-been applied to a cluster.
+The v0.1.x path, GP-2A `v0.2.0` boundary, GP-3 `v0.3.0` workload security
+baseline, and GP-4 `v0.4.0` resource governance were runtime verified on local
+disposable kind clusters.
 
 ## Validate
 
 Run `./scripts/configure.sh` after changing configuration, then
-`./scripts/validate.sh`. Validation renders all Kustomizations, rejects
+`./scripts/validate.sh`. Use `./scripts/configure.sh --check` to verify tracked
+renders without modifying them. Validation renders all Kustomizations, rejects
 `latest`, requires the configured OCI digest and release revision, checks
 labels, evaluates the AppProject/Application ownership contract, validates the
-complete workload security contract and isolated denied fixtures, and uses
-kubeconform when installed. It also verifies the complete GP-4 resource
-governance contract and eight negative fixtures. GP-4 results are
-TEST-VERIFIED / STATIC, not proof of Kubernetes admission enforcement.
+complete workload security contract and isolated denied fixtures, and requires
+kubeconform. It also verifies the complete GP-4 resource-governance contract
+and eight negative fixtures. CI results are TEST-VERIFIED / STATIC and remain
+separate from runtime-enforcement evidence.

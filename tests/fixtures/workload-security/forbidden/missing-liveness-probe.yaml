@@ -1,0 +1,5 @@
+name: missing-liveness-probe
+expected: liveness-probe
+patch:
+  - op: remove
+    path: /spec/template/spec/containers/0/livenessProbe
