@@ -3,4 +3,5 @@ kind: Kustomization
 resources:
   - ../../projects
   - ../../environments/dev
+  - service-a-identity.yaml
   - service-a.yaml

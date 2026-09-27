@@ -1,0 +1,6 @@
+name: host-network
+expected: host-network
+patch:
+  - op: add
+    path: /spec/template/spec/hostNetwork
+    value: true

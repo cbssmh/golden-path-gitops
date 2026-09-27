@@ -1,0 +1,6 @@
+name: token-automount
+expected: token-automount
+patch:
+  - op: replace
+    path: /spec/template/spec/automountServiceAccountToken
+    value: true

@@ -1,0 +1,6 @@
+name: root-user
+expected: run-as-user
+patch:
+  - op: replace
+    path: /spec/template/spec/securityContext/runAsUser
+    value: 0

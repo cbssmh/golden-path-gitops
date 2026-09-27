@@ -1,0 +1,9 @@
+name: host-path
+expected: host-path
+patch:
+  - op: add
+    path: /spec/template/spec/volumes
+    value:
+      - name: host
+        hostPath:
+          path: /etc

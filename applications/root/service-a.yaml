@@ -4,7 +4,7 @@ metadata:
   name: service-a
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     app.kubernetes.io/name: service-a
     app.kubernetes.io/managed-by: argocd
@@ -13,7 +13,7 @@ spec:
   project: golden-path-service-a
   source:
     repoURL: https://github.com/cbssmh/golden-path-gitops.git
-    targetRevision: v0.2.0
+    targetRevision: v0.3.0
     path: services/service-a/overlays/dev
   destination:
     server: https://kubernetes.default.svc

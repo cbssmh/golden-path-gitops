@@ -1,0 +1,6 @@
+name: privileged-container
+expected: privileged
+patch:
+  - op: add
+    path: /spec/template/spec/containers/0/securityContext/privileged
+    value: true

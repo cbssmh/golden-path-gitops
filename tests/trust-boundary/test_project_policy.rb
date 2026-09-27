@@ -7,6 +7,7 @@ require "yaml"
 ROOT = File.expand_path("../..", __dir__)
 EXPECTED_REPOSITORY = "https://github.com/cbssmh/golden-path-gitops.git"
 EXPECTED_SERVER = "https://kubernetes.default.svc"
+EXPECTED_REVISION = "v0.3.0"
 EXPECTED_NAMESPACE_KINDS = [
   ["", "ConfigMap"],
   ["", "Service"],
@@ -62,12 +63,31 @@ assert(allowed_kinds == EXPECTED_NAMESPACE_KINDS.sort, "workload namespaced kind
 application = document("applications/root/service-a.yaml")
 assert(application.dig("spec", "project") == "golden-path-service-a", "service-a must use golden-path-service-a")
 assert(application.dig("spec", "source", "repoURL") == EXPECTED_REPOSITORY, "service-a source repository is not exact")
-assert(application.dig("spec", "source", "targetRevision") == "v0.2.0", "service-a must target v0.2.0")
+assert(application.dig("spec", "source", "targetRevision") == EXPECTED_REVISION, "service-a must target #{EXPECTED_REVISION}")
 assert(application.dig("spec", "source", "path") == "services/service-a/overlays/dev", "service-a source path changed")
 assert(application.dig("spec", "destination") == {"server" => EXPECTED_SERVER, "namespace" => "dev"}, "service-a destination must be in-cluster dev")
 assert(application.dig("spec", "syncPolicy", "automated") == {"prune" => true, "selfHeal" => false}, "service-a prune/selfHeal policy changed")
 assert(!application.dig("spec", "syncPolicy").key?("syncOptions"), "service-a must not auto-create its Namespace")
-assert(application.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "0", "service-a Application must use sync wave 0")
+assert(application.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "1", "service-a Application must follow the identity Application")
+
+identity_project = document("projects/golden-path-service-a-identity.yaml")
+identity_spec = identity_project.fetch("spec")
+assert(identity_project.dig("metadata", "name") == "golden-path-service-a-identity", "unexpected identity project name")
+assert(identity_project.dig("metadata", "namespace") == "argocd", "identity project must live in argocd")
+assert(identity_project.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "-2", "identity project must use sync wave -2")
+assert(identity_spec.fetch("sourceRepos") == [EXPECTED_REPOSITORY], "identity project source repository must be exact")
+assert(identity_spec.fetch("destinations") == [{"server" => EXPECTED_SERVER, "namespace" => "dev"}], "identity project destination must be in-cluster dev only")
+assert(identity_spec.fetch("clusterResourceWhitelist") == [], "identity project must allow no cluster resources")
+assert(identity_spec.fetch("namespaceResourceWhitelist") == [{"group" => "", "kind" => "ServiceAccount"}], "identity project must allow only ServiceAccount")
+
+identity_application = document("applications/root/service-a-identity.yaml")
+assert(identity_application.dig("spec", "project") == "golden-path-service-a-identity", "identity Application must use its dedicated project")
+assert(identity_application.dig("spec", "source", "repoURL") == EXPECTED_REPOSITORY, "identity source repository is not exact")
+assert(identity_application.dig("spec", "source", "targetRevision") == EXPECTED_REVISION, "identity Application must target #{EXPECTED_REVISION}")
+assert(identity_application.dig("spec", "source", "path") == "platform/service-accounts/service-a", "identity source path changed")
+assert(identity_application.dig("spec", "destination") == {"server" => EXPECTED_SERVER, "namespace" => "dev"}, "identity destination must be in-cluster dev")
+assert(identity_application.dig("spec", "syncPolicy", "automated") == {"prune" => true, "selfHeal" => false}, "identity prune/selfHeal policy changed")
+assert(identity_application.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "0", "identity Application must use sync wave 0")
 
 active_applications = Dir.glob(File.join(ROOT, "applications", "**", "*.yaml")).flat_map do |path|
   documents_from_text(File.read(path)).select { |item| item["kind"] == "Application" }
@@ -82,11 +102,25 @@ assert(workload_resources.none? { |item| item["kind"] == "Namespace" }, "workloa
 
 root_resources = render("applications/root")
 root_kinds = root_resources.map { |item| group_kind(item) }.sort
-expected_root_kinds = [["", "Namespace"], ["argoproj.io", "AppProject"], ["argoproj.io", "Application"]].sort
-assert(root_kinds == expected_root_kinds, "root must render exactly the workload AppProject, dev Namespace, and service-a Application")
+expected_root_kinds = [
+  ["", "Namespace"],
+  ["argoproj.io", "AppProject"],
+  ["argoproj.io", "AppProject"],
+  ["argoproj.io", "Application"],
+  ["argoproj.io", "Application"]
+].sort
+assert(root_kinds == expected_root_kinds, "root must render exactly two AppProjects, Namespace/dev, and two Applications")
 namespace = root_resources.find { |item| item["kind"] == "Namespace" }
 assert(namespace.dig("metadata", "name") == "dev", "root must own Namespace/dev")
 assert(namespace.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "-1", "Namespace/dev must use sync wave -1")
+
+identity_resources = render("platform/service-accounts/service-a")
+assert(identity_resources.length == 1, "identity path must render exactly one resource")
+service_account = identity_resources.first
+assert(group_kind(service_account) == ["", "ServiceAccount"], "identity path must render only ServiceAccount")
+assert(service_account.dig("metadata", "name") == "service-a", "identity path must own ServiceAccount/service-a")
+assert(service_account.dig("metadata", "namespace") == "dev", "ServiceAccount/service-a must render into dev")
+assert(service_account["automountServiceAccountToken"] == false, "ServiceAccount/service-a must disable token automount")
 
 resource_cases = {
   "crd" => ["tests/fixtures/trust-boundary/forbidden/crd.yaml", :cluster],
@@ -125,5 +159,6 @@ application_cases.each do |name, path|
 end
 
 puts "PASS: actual Service A repository, dev destination, Deployment, Service, and ConfigMap satisfy the workload project"
-puts "PASS: root ownership graph and namespace handoff are statically verified"
+puts "PASS: platform identity project permits only ServiceAccount in dev"
+puts "PASS: root ownership graph, namespace handoff, and platform-owned ServiceAccount are statically verified"
 puts "PASS: GP-2A trust-boundary policy is TEST-VERIFIED / STATIC"
