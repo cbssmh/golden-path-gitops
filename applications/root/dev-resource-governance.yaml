@@ -1,20 +1,20 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: service-a
+  name: dev-resource-governance
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
   labels:
-    app.kubernetes.io/name: service-a
+    app.kubernetes.io/name: dev-resource-governance
     app.kubernetes.io/managed-by: argocd
     app.kubernetes.io/part-of: golden-path-platform
 spec:
-  project: golden-path-service-a
+  project: golden-path-dev-governance
   source:
     repoURL: https://github.com/cbssmh/golden-path-gitops.git
     targetRevision: v0.4.0
-    path: services/service-a/overlays/dev
+    path: platform/resource-governance/dev
   destination:
     server: https://kubernetes.default.svc
     namespace: dev

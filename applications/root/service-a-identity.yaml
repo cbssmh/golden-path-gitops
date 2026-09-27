@@ -13,7 +13,7 @@ spec:
   project: golden-path-service-a-identity
   source:
     repoURL: https://github.com/cbssmh/golden-path-gitops.git
-    targetRevision: v0.3.0
+    targetRevision: v0.4.0
     path: platform/service-accounts/service-a
   destination:
     server: https://kubernetes.default.svc

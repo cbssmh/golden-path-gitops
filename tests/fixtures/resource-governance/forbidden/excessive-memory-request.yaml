@@ -1,0 +1,10 @@
+name: excessive-memory-request
+target: workload
+expected: memory-request-budget
+patch:
+  - op: replace
+    path: /spec/template/spec/containers/0/resources/requests/memory
+    value: 160Mi
+  - op: replace
+    path: /spec/template/spec/containers/0/resources/limits/memory
+    value: 200Mi

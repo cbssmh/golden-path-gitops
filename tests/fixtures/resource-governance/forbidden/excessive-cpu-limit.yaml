@@ -1,0 +1,7 @@
+name: excessive-cpu-limit
+target: workload
+expected: cpu-limit-max
+patch:
+  - op: replace
+    path: /spec/template/spec/containers/0/resources/limits/cpu
+    value: 251m

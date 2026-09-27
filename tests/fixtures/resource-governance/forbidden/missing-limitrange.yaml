@@ -1,0 +1,4 @@
+name: missing-limitrange
+target: governance
+expected: limit-range
+removeKind: LimitRange

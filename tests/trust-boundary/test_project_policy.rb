@@ -7,7 +7,7 @@ require "yaml"
 ROOT = File.expand_path("../..", __dir__)
 EXPECTED_REPOSITORY = "https://github.com/cbssmh/golden-path-gitops.git"
 EXPECTED_SERVER = "https://kubernetes.default.svc"
-EXPECTED_REVISION = "v0.3.0"
+EXPECTED_REVISION = "v0.4.0"
 EXPECTED_NAMESPACE_KINDS = [
   ["", "ConfigMap"],
   ["", "Service"],
@@ -89,6 +89,28 @@ assert(identity_application.dig("spec", "destination") == {"server" => EXPECTED_
 assert(identity_application.dig("spec", "syncPolicy", "automated") == {"prune" => true, "selfHeal" => false}, "identity prune/selfHeal policy changed")
 assert(identity_application.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "0", "identity Application must use sync wave 0")
 
+governance_project = document("projects/golden-path-dev-governance.yaml")
+governance_spec = governance_project.fetch("spec")
+assert(governance_project.dig("metadata", "name") == "golden-path-dev-governance", "unexpected governance project name")
+assert(governance_project.dig("metadata", "namespace") == "argocd", "governance project must live in argocd")
+assert(governance_project.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "-2", "governance project must use sync wave -2")
+assert(governance_spec.fetch("sourceRepos") == [EXPECTED_REPOSITORY], "governance source repository must be exact")
+assert(governance_spec.fetch("destinations") == [{"server" => EXPECTED_SERVER, "namespace" => "dev"}], "governance destination must be in-cluster dev only")
+assert(governance_spec.fetch("clusterResourceWhitelist") == [], "governance project must allow no cluster resources")
+governance_kinds = governance_spec.fetch("namespaceResourceWhitelist").map do |entry|
+  [entry.fetch("group"), entry.fetch("kind")]
+end.sort
+assert(governance_kinds == [["", "LimitRange"], ["", "ResourceQuota"]], "governance project must allow only LimitRange and ResourceQuota")
+
+governance_application = document("applications/root/dev-resource-governance.yaml")
+assert(governance_application.dig("spec", "project") == "golden-path-dev-governance", "governance Application must use its dedicated project")
+assert(governance_application.dig("spec", "source", "repoURL") == EXPECTED_REPOSITORY, "governance source repository is not exact")
+assert(governance_application.dig("spec", "source", "targetRevision") == EXPECTED_REVISION, "governance Application must target #{EXPECTED_REVISION}")
+assert(governance_application.dig("spec", "source", "path") == "platform/resource-governance/dev", "governance source path changed")
+assert(governance_application.dig("spec", "destination") == {"server" => EXPECTED_SERVER, "namespace" => "dev"}, "governance destination must be in-cluster dev")
+assert(governance_application.dig("spec", "syncPolicy", "automated") == {"prune" => true, "selfHeal" => false}, "governance prune/selfHeal policy changed")
+assert(governance_application.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "0", "governance Application must use sync wave 0")
+
 active_applications = Dir.glob(File.join(ROOT, "applications", "**", "*.yaml")).flat_map do |path|
   documents_from_text(File.read(path)).select { |item| item["kind"] == "Application" }
 end
@@ -106,10 +128,12 @@ expected_root_kinds = [
   ["", "Namespace"],
   ["argoproj.io", "AppProject"],
   ["argoproj.io", "AppProject"],
+  ["argoproj.io", "AppProject"],
+  ["argoproj.io", "Application"],
   ["argoproj.io", "Application"],
   ["argoproj.io", "Application"]
 ].sort
-assert(root_kinds == expected_root_kinds, "root must render exactly two AppProjects, Namespace/dev, and two Applications")
+assert(root_kinds == expected_root_kinds, "root must render exactly three AppProjects, Namespace/dev, and three Applications")
 namespace = root_resources.find { |item| item["kind"] == "Namespace" }
 assert(namespace.dig("metadata", "name") == "dev", "root must own Namespace/dev")
 assert(namespace.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "-1", "Namespace/dev must use sync wave -1")
@@ -121,6 +145,11 @@ assert(group_kind(service_account) == ["", "ServiceAccount"], "identity path mus
 assert(service_account.dig("metadata", "name") == "service-a", "identity path must own ServiceAccount/service-a")
 assert(service_account.dig("metadata", "namespace") == "dev", "ServiceAccount/service-a must render into dev")
 assert(service_account["automountServiceAccountToken"] == false, "ServiceAccount/service-a must disable token automount")
+
+governance_resources = render("platform/resource-governance/dev")
+assert(governance_resources.length == 2, "governance path must render exactly two resources")
+assert(governance_resources.map { |item| group_kind(item) }.sort == [["", "LimitRange"], ["", "ResourceQuota"]], "governance path must render only LimitRange and ResourceQuota")
+assert(governance_resources.all? { |item| item.dig("metadata", "namespace") == "dev" }, "governance resources must render into dev")
 
 resource_cases = {
   "crd" => ["tests/fixtures/trust-boundary/forbidden/crd.yaml", :cluster],
@@ -160,5 +189,6 @@ end
 
 puts "PASS: actual Service A repository, dev destination, Deployment, Service, and ConfigMap satisfy the workload project"
 puts "PASS: platform identity project permits only ServiceAccount in dev"
-puts "PASS: root ownership graph, namespace handoff, and platform-owned ServiceAccount are statically verified"
+puts "PASS: platform governance project permits only ResourceQuota and LimitRange in dev"
+puts "PASS: root ownership graph, namespace handoff, ServiceAccount, and resource governance are statically verified"
 puts "PASS: GP-2A trust-boundary policy is TEST-VERIFIED / STATIC"

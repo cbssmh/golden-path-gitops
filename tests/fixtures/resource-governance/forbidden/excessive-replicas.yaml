@@ -1,0 +1,7 @@
+name: excessive-replicas
+target: workload
+expected: replicas
+patch:
+  - op: replace
+    path: /spec/replicas
+    value: 100

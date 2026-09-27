@@ -1,0 +1,7 @@
+name: excessive-memory-limit
+target: workload
+expected: memory-limit-max
+patch:
+  - op: replace
+    path: /spec/template/spec/containers/0/resources/limits/memory
+    value: 257Mi

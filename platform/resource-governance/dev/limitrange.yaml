@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: dev-container-boundary
+  labels:
+    app.kubernetes.io/name: dev-container-boundary
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: golden-path-platform
+spec:
+  limits:
+    - type: Container
+      max:
+        cpu: 250m
+        memory: 256Mi
