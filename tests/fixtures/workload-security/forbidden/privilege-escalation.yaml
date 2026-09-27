@@ -1,0 +1,6 @@
+name: privilege-escalation
+expected: privilege-escalation
+patch:
+  - op: replace
+    path: /spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation
+    value: true

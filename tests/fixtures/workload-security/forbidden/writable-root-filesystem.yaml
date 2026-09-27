@@ -1,0 +1,6 @@
+name: writable-root-filesystem
+expected: read-only-root
+patch:
+  - op: replace
+    path: /spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem
+    value: false

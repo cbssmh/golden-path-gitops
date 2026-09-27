@@ -1,0 +1,5 @@
+name: missing-run-as-non-root
+expected: run-as-non-root
+patch:
+  - op: remove
+    path: /spec/template/spec/securityContext/runAsNonRoot

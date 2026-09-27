@@ -117,7 +117,7 @@ assert(service_account["automountServiceAccountToken"] == false, "ServiceAccount
 puts "PASS: platform-owned ServiceAccount/service-a is tokenless"
 
 fixture_paths = Dir.glob(FIXTURES).sort
-assert(fixture_paths.length == 9, "expected exactly nine workload-security negative fixtures")
+assert(fixture_paths.length == 15, "expected exactly fifteen workload-security negative fixtures")
 fixture_paths.each do |path|
   fixture = YAML.load_file(path)
   candidate = apply_patch(deployment, fixture.fetch("patch"))
