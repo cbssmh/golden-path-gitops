@@ -8,6 +8,7 @@ ROOT = File.expand_path("../..", __dir__)
 EXPECTED_REPOSITORY = "https://github.com/cbssmh/golden-path-gitops.git"
 EXPECTED_SERVER = "https://kubernetes.default.svc"
 EXPECTED_REVISION = "v0.4.0"
+EXPECTED_ADMISSION_REVISION = "v0.6.0"
 EXPECTED_NAMESPACE_KINDS = [
   ["", "ConfigMap"],
   ["", "Service"],
@@ -111,6 +112,32 @@ assert(governance_application.dig("spec", "destination") == {"server" => EXPECTE
 assert(governance_application.dig("spec", "syncPolicy", "automated") == {"prune" => true, "selfHeal" => false}, "governance prune/selfHeal policy changed")
 assert(governance_application.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "0", "governance Application must use sync wave 0")
 
+admission_project = document("projects/golden-path-dev-admission.yaml")
+admission_spec = admission_project.fetch("spec")
+assert(admission_project.dig("metadata", "name") == "golden-path-dev-admission", "unexpected admission project name")
+assert(admission_project.dig("metadata", "namespace") == "argocd", "admission project must live in argocd")
+assert(admission_project.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "-2", "admission project must use sync wave -2")
+assert(admission_spec.fetch("sourceRepos") == [EXPECTED_REPOSITORY], "admission source repository must be exact")
+assert(admission_spec.fetch("destinations") == [{"server" => EXPECTED_SERVER, "namespace" => "dev"}], "admission destination must be in-cluster dev only")
+assert(admission_spec.fetch("namespaceResourceWhitelist") == [], "admission project must allow no namespaced resources")
+admission_kinds = admission_spec.fetch("clusterResourceWhitelist").map do |entry|
+  [entry.fetch("group"), entry.fetch("kind")]
+end.sort
+expected_admission_kinds = [
+  ["admissionregistration.k8s.io", "ValidatingAdmissionPolicy"],
+  ["admissionregistration.k8s.io", "ValidatingAdmissionPolicyBinding"]
+].sort
+assert(admission_kinds == expected_admission_kinds, "admission project must allow only VAP and VAP binding")
+
+admission_application = document("applications/root/dev-admission.yaml")
+assert(admission_application.dig("spec", "project") == "golden-path-dev-admission", "admission Application must use its dedicated project")
+assert(admission_application.dig("spec", "source", "repoURL") == EXPECTED_REPOSITORY, "admission source repository is not exact")
+assert(admission_application.dig("spec", "source", "targetRevision") == EXPECTED_ADMISSION_REVISION, "admission Application must target #{EXPECTED_ADMISSION_REVISION}")
+assert(admission_application.dig("spec", "source", "path") == "platform/admission/dev", "admission source path changed")
+assert(admission_application.dig("spec", "destination") == {"server" => EXPECTED_SERVER, "namespace" => "dev"}, "admission destination must be in-cluster dev")
+assert(admission_application.dig("spec", "syncPolicy", "automated") == {"prune" => true, "selfHeal" => false}, "admission prune/selfHeal policy changed")
+assert(admission_application.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "0", "admission Application must use sync wave 0")
+
 active_applications = Dir.glob(File.join(ROOT, "applications", "**", "*.yaml")).flat_map do |path|
   documents_from_text(File.read(path)).select { |item| item["kind"] == "Application" }
 end
@@ -129,11 +156,13 @@ expected_root_kinds = [
   ["argoproj.io", "AppProject"],
   ["argoproj.io", "AppProject"],
   ["argoproj.io", "AppProject"],
+  ["argoproj.io", "AppProject"],
+  ["argoproj.io", "Application"],
   ["argoproj.io", "Application"],
   ["argoproj.io", "Application"],
   ["argoproj.io", "Application"]
 ].sort
-assert(root_kinds == expected_root_kinds, "root must render exactly three AppProjects, Namespace/dev, and three Applications")
+assert(root_kinds == expected_root_kinds, "root must render exactly four AppProjects, Namespace/dev, and four Applications")
 namespace = root_resources.find { |item| item["kind"] == "Namespace" }
 assert(namespace.dig("metadata", "name") == "dev", "root must own Namespace/dev")
 assert(namespace.dig("metadata", "annotations", "argocd.argoproj.io/sync-wave") == "-1", "Namespace/dev must use sync wave -1")
@@ -190,5 +219,6 @@ end
 puts "PASS: actual Service A repository, dev destination, Deployment, Service, and ConfigMap satisfy the workload project"
 puts "PASS: platform identity project permits only ServiceAccount in dev"
 puts "PASS: platform governance project permits only ResourceQuota and LimitRange in dev"
+puts "PASS: platform admission project permits only VAP and VAP binding cluster resources"
 puts "PASS: root ownership graph, namespace handoff, ServiceAccount, and resource governance are statically verified"
 puts "PASS: GP-2A trust-boundary policy is TEST-VERIFIED / STATIC"

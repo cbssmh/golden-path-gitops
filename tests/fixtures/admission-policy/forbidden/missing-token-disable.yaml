@@ -1,0 +1,5 @@
+name: missing-token-disable
+expected: token-automount
+patch:
+  - op: remove
+    path: /spec/template/spec/automountServiceAccountToken

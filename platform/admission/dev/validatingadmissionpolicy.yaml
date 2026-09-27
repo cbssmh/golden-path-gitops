@@ -1,0 +1,92 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: golden-path-deployment-contract
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/name: golden-path-deployment-contract
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: golden-path-platform
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments]
+        scope: Namespaced
+  validations:
+    - expression: >-
+        object.spec.template.spec.containers.all(c,
+          c.image.matches('^[^@]+@sha256:[0-9a-f]{64}$')) &&
+        (!has(object.spec.template.spec.initContainers) ||
+          object.spec.template.spec.initContainers.all(c,
+            c.image.matches('^[^@]+@sha256:[0-9a-f]{64}$')))
+      message: >-
+        Image identity contract failed: every container and initContainer image
+        must use an immutable @sha256 digest with 64 lowercase hexadecimal characters.
+      reason: Invalid
+    - expression: >-
+        object.spec.template.spec.containers.all(c,
+          c.image.startsWith('ghcr.io/cbssmh/')) &&
+        (!has(object.spec.template.spec.initContainers) ||
+          object.spec.template.spec.initContainers.all(c,
+            c.image.startsWith('ghcr.io/cbssmh/')))
+      message: >-
+        Image registry contract failed: every container and initContainer image
+        must use the approved ghcr.io/cbssmh/ registry path.
+      reason: Invalid
+    - expression: >-
+        has(object.spec.template.spec.serviceAccountName) &&
+        object.spec.template.spec.serviceAccountName != '' &&
+        object.spec.template.spec.serviceAccountName != 'default'
+      message: >-
+        ServiceAccount contract failed: serviceAccountName must be explicit,
+        non-empty, and must not be default.
+      reason: Invalid
+    - expression: >-
+        has(object.spec.template.spec.automountServiceAccountToken) &&
+        object.spec.template.spec.automountServiceAccountToken == false
+      message: >-
+        Token boundary contract failed: automountServiceAccountToken must be false.
+      reason: Invalid
+    - expression: >-
+        object.spec.template.spec.containers.all(c,
+          has(c.securityContext) &&
+          has(c.securityContext.readOnlyRootFilesystem) &&
+          c.securityContext.readOnlyRootFilesystem == true)
+      message: >-
+        Root filesystem contract failed: every regular container must set
+        securityContext.readOnlyRootFilesystem to true.
+      reason: Invalid
+    - expression: >-
+        object.spec.template.spec.containers.all(c, has(c.readinessProbe))
+      message: >-
+        Readiness contract failed: every regular container must define a readinessProbe.
+      reason: Invalid
+    - expression: >-
+        object.spec.template.spec.containers.all(c, has(c.livenessProbe))
+      message: >-
+        Liveness contract failed: every regular container must define a livenessProbe.
+      reason: Invalid
+    - expression: >-
+        object.spec.template.spec.containers.all(c,
+          has(c.resources) &&
+          has(c.resources.requests) &&
+          has(c.resources.limits) &&
+          'cpu' in c.resources.requests &&
+          'memory' in c.resources.requests &&
+          'cpu' in c.resources.limits &&
+          'memory' in c.resources.limits)
+      message: >-
+        Resource declaration contract failed: every regular container must define
+        CPU and memory requests and limits.
+      reason: Invalid
+    - expression: >-
+        !has(object.spec.replicas) ||
+        (object.spec.replicas >= 1 && object.spec.replicas <= 4)
+      message: >-
+        Replica contract failed: replicas must be between 1 and 4; omission is treated as 1.
+      reason: Invalid

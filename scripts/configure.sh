@@ -17,6 +17,7 @@ render_template() {
   sed \
     -e "s|__GITOPS_REPOSITORY_URL__|${GITOPS_REPOSITORY_URL}|g" \
     -e "s|__GITOPS_TARGET_REVISION__|${GITOPS_TARGET_REVISION}|g" \
+    -e "s|__GITOPS_ADMISSION_TARGET_REVISION__|${GITOPS_ADMISSION_TARGET_REVISION}|g" \
     -e "s|__SERVICE_A_IMAGE__|${SERVICE_A_IMAGE}|g" \
     "${template}" >"${output}"
 }
@@ -30,6 +31,7 @@ render_all() {
   render_template "${ROOT_DIR}/templates/applications/root/service-a.yaml.tmpl" "${output_root}/applications/root/service-a.yaml"
   render_template "${ROOT_DIR}/templates/applications/root/service-a-identity.yaml.tmpl" "${output_root}/applications/root/service-a-identity.yaml"
   render_template "${ROOT_DIR}/templates/applications/root/dev-resource-governance.yaml.tmpl" "${output_root}/applications/root/dev-resource-governance.yaml"
+  render_template "${ROOT_DIR}/templates/applications/root/dev-admission.yaml.tmpl" "${output_root}/applications/root/dev-admission.yaml"
   render_template "${ROOT_DIR}/templates/services/service-a/base/deployment.yaml.tmpl" "${output_root}/services/service-a/base/deployment.yaml"
 }
 
@@ -41,6 +43,7 @@ if [[ "${mode}" == "--check" ]]; then
     applications/root/service-a.yaml \
     applications/root/service-a-identity.yaml \
     applications/root/dev-resource-governance.yaml \
+    applications/root/dev-admission.yaml \
     services/service-a/base/deployment.yaml; do
     diff -u "${ROOT_DIR}/${path}" "${temporary_root}/${path}"
   done
