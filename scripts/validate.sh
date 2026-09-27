@@ -14,6 +14,7 @@ validate_rendering() {
     applications/root \
     projects \
     environments/dev \
+    platform/admission/dev \
     platform/resource-governance/dev \
     platform/service-accounts/service-a \
     services/service-a/overlays/dev; do
@@ -26,6 +27,7 @@ validate_contracts() {
   ruby tests/trust-boundary/test_project_policy.rb
   ruby tests/workload-security/test_contract.rb
   ruby tests/resource-governance/test_contract.rb
+  ruby tests/admission-policy/test_contract.rb
   ruby tests/supply-chain/test_pins.rb
 }
 
@@ -41,6 +43,7 @@ validate_artifacts() {
   grep -F "targetRevision: ${GITOPS_TARGET_REVISION}" applications/root/service-a.yaml >/dev/null
   grep -F "targetRevision: ${GITOPS_TARGET_REVISION}" applications/root/service-a-identity.yaml >/dev/null
   grep -F "targetRevision: ${GITOPS_TARGET_REVISION}" applications/root/dev-resource-governance.yaml >/dev/null
+  grep -F "targetRevision: ${GITOPS_ADMISSION_TARGET_REVISION}" applications/root/dev-admission.yaml >/dev/null
   grep -F "image: ${SERVICE_A_IMAGE}" services/service-a/base/deployment.yaml >/dev/null
   for label in name instance version managed-by part-of; do
     if ! grep -R -E "app\.kubernetes\.io/${label}:" services/service-a \
@@ -61,6 +64,7 @@ validate_schemas() {
   schema_location="https://raw.githubusercontent.com/yannh/kubernetes-json-schema/${KUBERNETES_SCHEMA_COMMIT}/v${KUBERNETES_SCHEMA_VERSION}-standalone-strict/{{.ResourceKind}}{{.KindSuffix}}.json"
   for path in \
     environments/dev \
+    platform/admission/dev \
     platform/resource-governance/dev \
     platform/service-accounts/service-a \
     services/service-a/overlays/dev; do
@@ -80,7 +84,7 @@ validate_whitespace() {
 
 echo "== Render validation =="
 validate_rendering
-echo "== GP-2A through GP-5 and SC-1 static contracts =="
+echo "== GP-2A through GP-6 and SC-1 static contracts =="
 validate_contracts
 echo "== Artifact and image contract =="
 validate_artifacts

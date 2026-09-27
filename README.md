@@ -5,8 +5,10 @@ Path platform. GP-2A `v0.2.0` established and runtime-verified the Argo CD
 deployment boundary. GP-3 `v0.3.0` released and runtime-verified a hardened
 workload, Restricted Pod Security Admission, and a platform-owned
 ServiceAccount. GP-4 `v0.4.0` released and runtime-verified platform-owned
-namespace resource governance. This repository does not build images or
-bootstrap clusters.
+namespace resource governance. GP-6 is implemented as a source- and
+test-verified admission candidate in Warn/Audit mode; it is not runtime
+verified or deny-enforced. This repository does not build images or bootstrap
+clusters.
 
 ## Release inputs
 
@@ -83,6 +85,25 @@ and negative executions are `TEST-VERIFIED`; they do not prove Kubernetes or
 Argo runtime behavior. Existing GP-2A, GP-3, and GP-4 runtime evidence remains
 separate and `RUNTIME-VERIFIED`.
 
+## GP-6 admission contract
+
+GP-6 adds a platform-owned ValidatingAdmissionPolicy and binding for
+`apps/v1` Deployments created or updated in explicitly opted-in namespaces.
+Namespace `dev` is the only opted-in namespace. The initial binding uses
+`Warn` and `Audit`; it does not deny admission.
+
+The policy validates immutable images from `ghcr.io/cbssmh/`, a non-default
+ServiceAccount, disabled token automount, read-only container root filesystems,
+readiness and liveness probes, explicit CPU and memory requests and limits,
+and one to four replicas. Argo AppProjects retain repository, destination, and
+kind ownership; PSA retains standardized Pod security; ResourceQuota and
+LimitRange retain resource-budget enforcement.
+
+The GP-6 manifests and semantic fixtures are `SOURCE-CONFIRMED` and
+`TEST-VERIFIED / STATIC`. No Kubernetes admission behavior is claimed until a
+separately approved disposable runtime verification completes. See
+[`docs/gp-6-validating-admission-policy.md`](docs/gp-6-validating-admission-policy.md).
+
 ## Runtime verification
 
 The v0.1.x path, GP-2A `v0.2.0` boundary, GP-3 `v0.3.0` workload security
@@ -98,5 +119,6 @@ renders without modifying them. Validation renders all Kustomizations, rejects
 labels, evaluates the AppProject/Application ownership contract, validates the
 complete workload security contract and isolated denied fixtures, and requires
 kubeconform. It also verifies the complete GP-4 resource-governance contract
-and eight negative fixtures. CI results are TEST-VERIFIED / STATIC and remain
-separate from runtime-enforcement evidence.
+and the Warn/Audit GP-6 admission contract with their isolated negative
+fixtures. CI results are TEST-VERIFIED / STATIC and remain separate from
+runtime-enforcement evidence.

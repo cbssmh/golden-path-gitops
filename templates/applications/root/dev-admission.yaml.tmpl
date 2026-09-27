@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dev-admission
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/name: dev-admission
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: golden-path-platform
+spec:
+  project: golden-path-dev-admission
+  source:
+    repoURL: __GITOPS_REPOSITORY_URL__
+    targetRevision: __GITOPS_ADMISSION_TARGET_REVISION__
+    path: platform/admission/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false

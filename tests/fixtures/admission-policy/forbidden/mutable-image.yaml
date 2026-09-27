@@ -1,0 +1,6 @@
+name: mutable-image
+expected: image-digest
+patch:
+  - op: replace
+    path: /spec/template/spec/containers/0/image
+    value: ghcr.io/cbssmh/golden-path-service-a:latest

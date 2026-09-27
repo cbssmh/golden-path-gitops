@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: golden-path-dev-admission
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+  labels:
+    app.kubernetes.io/name: golden-path-dev-admission
+    app.kubernetes.io/part-of: golden-path-platform
+spec:
+  description: Platform-owned admission contract for Namespace/dev.
+  sourceRepos:
+    - https://github.com/cbssmh/golden-path-gitops.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: dev
+  clusterResourceWhitelist:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingAdmissionPolicy
+    - group: admissionregistration.k8s.io
+      kind: ValidatingAdmissionPolicyBinding
+  namespaceResourceWhitelist: []

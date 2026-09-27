@@ -1,0 +1,5 @@
+name: missing-readiness-probe
+expected: readiness-probe
+patch:
+  - op: remove
+    path: /spec/template/spec/containers/0/readinessProbe
