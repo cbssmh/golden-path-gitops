@@ -10,6 +10,9 @@
 /scripts/ @cbssmh
 /tests/trust-boundary/ @cbssmh
 /tests/fixtures/trust-boundary/ @cbssmh
+/tests/resource-governance/ @cbssmh
+/tests/fixtures/resource-governance/ @cbssmh
 /.github/ @cbssmh
 /services/service-a/ @cbssmh
 /templates/services/service-a/ @cbssmh
+/platform/resource-governance/ @cbssmh

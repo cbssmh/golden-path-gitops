@@ -1,0 +1,4 @@
+name: missing-resourcequota
+target: governance
+expected: resource-quota
+removeKind: ResourceQuota

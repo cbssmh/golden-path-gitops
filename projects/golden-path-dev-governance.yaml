@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: golden-path-dev-governance
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+  labels:
+    app.kubernetes.io/name: golden-path-dev-governance
+    app.kubernetes.io/part-of: golden-path-platform
+spec:
+  description: Platform-owned resource governance for Namespace/dev.
+  sourceRepos:
+    - https://github.com/cbssmh/golden-path-gitops.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: dev
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange

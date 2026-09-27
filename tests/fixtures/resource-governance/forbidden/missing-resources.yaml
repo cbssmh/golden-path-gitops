@@ -1,0 +1,6 @@
+name: missing-resources
+target: workload
+expected: resources
+patch:
+  - op: remove
+    path: /spec/template/spec/containers/0/resources
